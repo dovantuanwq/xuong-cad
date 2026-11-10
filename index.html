@@ -1,0 +1,428 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Xưởng CAD Karofi</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one-screen shell — slim workspace switcher on top, each workspace fills the rest (2D drawing / 3D model / Claude 2D→3D guide) */
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --line:#d5dbe2; --fg:#16202b; --muted:#5d6b7a; --accent:#1f5fbf; --accent-fg:#ffffff; --ok:#1d7a4a; --warn:#9a5b00;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#12161b;--panel:#1a2027;--line:#2c3540;--fg:#e4e9ef;--muted:#93a1b0;--accent:#6ea8ff;--accent-fg:#0b1422;--ok:#5fd39a;--warn:#f0b35a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12161b;--panel:#1a2027;--line:#2c3540;--fg:#e4e9ef;--muted:#93a1b0;--accent:#6ea8ff;--accent-fg:#0b1422;--ok:#5fd39a;--warn:#f0b35a;color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:14px/1.45 var(--sans);display:flex;flex-direction:column;overflow:hidden}
+.ws{display:flex;align-items:center;gap:4px;background:var(--panel);border-bottom:1px solid var(--line);padding-block:4px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow-x:auto;flex:none}
+.ws .name{font:600 13px var(--sans);letter-spacing:.02em;margin-right:10px;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.ws .name small{font:500 10px var(--mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.tab{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:1px solid transparent;border-radius:6px;background:none;color:var(--muted);cursor:pointer;font:500 13px var(--sans);white-space:nowrap}
+.tab:hover{color:var(--fg);background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.tab[aria-selected="true"]{color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);border-color:color-mix(in srgb,var(--accent) 40%,transparent)}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.tab .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:none}
+.tab.has .dot{display:inline-block}
+.views{flex:1;min-height:0;position:relative}
+.views > *{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--bg);box-sizing:border-box}
+#guide,#manual{overflow:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.g{max-width:780px;margin:0 auto;padding-block:28px 56px;display:flex;flex-direction:column;gap:26px}
+.g h1{font-size:26px;line-height:1.2;margin:0;text-wrap:balance}
+.g h2{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.g p{margin:0}
+.lead{color:var(--muted);max-width:64ch}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.step b{font:500 12px var(--mono);color:var(--accent)}
+@media (max-width:640px){.flow{grid-template-columns:1fr 1fr}}
+.tw{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-weight:600;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+code,kbd{font:13px var(--mono);background:color-mix(in srgb,var(--accent) 10%,transparent);padding:1px 5px;border-radius:4px}
+.ok{color:var(--ok);font-weight:500}.warn{color:var(--warn);font-weight:500}
+ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer;font:inherit}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:500}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 14px;border-radius:6px;font-size:13px;z-index:20;max-width:calc(100% - 32px)}
+.hd{max-width:860px;margin:0 auto;padding-block:28px 64px;display:flex;flex-direction:column;gap:34px}
+.hd-head{display:flex;flex-direction:column;gap:10px}
+.hd-eyebrow{font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0}
+.hd h1{font-size:30px;line-height:1.15;margin:0;text-wrap:balance}
+.hd-lead{color:var(--muted);max-width:66ch;margin:0}
+.hd-toc{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.hd-toc a{font:12.5px var(--sans);color:var(--fg);text-decoration:none;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 10px}
+.hd-toc a:hover{border-color:var(--accent);color:var(--accent)}
+.hd section{display:flex;flex-direction:column;gap:12px;scroll-margin-top:12px}
+.hd h2{display:flex;align-items:center;gap:10px;font-size:19px;letter-spacing:0;text-transform:none;color:var(--fg);margin:0;text-wrap:balance}
+.hd h2 span{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:6px;background:var(--accent);color:var(--accent-fg);font:600 13px var(--mono)}
+.hd ul,.hd ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:5px;max-width:70ch}
+.hd p{margin:0;max-width:70ch}
+.hd figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.hd figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#1b1f24}
+.hd figcaption{font-size:13px;color:var(--muted)}
+.hd-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.hd-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start}
+@media (max-width:720px){.hd-grid,.hd-grid3{grid-template-columns:1fr}}
+.hd table{width:100%;border-collapse:collapse;font-size:14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:block;overflow-x:auto}
+.hd table tbody{display:table;width:100%}
+.hd td,.hd th{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.hd th{font-weight:600;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.hd tr:last-child td{border-bottom:0}
+.hd-tip{background:color-mix(in srgb,var(--accent) 8%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:8px;padding:10px 12px;font-size:14px;max-width:none!important}
+kbd{border:1px solid var(--line);border-bottom-width:2px;background:var(--panel)}
+</style>
+
+<nav class="ws" role="tablist" aria-label="Không gian làm việc">
+  <span class="name"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h6v6M7 7h6v4h4" stroke-linecap="round"/></svg>Xưởng CAD <small>Karofi</small></span>
+  <button class="tab" role="tab" id="t2d" data-v="2d" aria-selected="true" aria-controls="v2d">Bản vẽ 2D<span class="dot"></span></button>
+  <button class="tab" role="tab" id="t3d" data-v="3d" aria-selected="false" aria-controls="v3d">Mô hình 3D<span class="dot"></span></button>
+  <button class="tab" role="tab" id="tg" data-v="claude" aria-selected="false" aria-controls="guide">Dựng 3D với Claude</button>
+  <button class="tab" role="tab" id="th" data-v="huong-dan" aria-selected="false" aria-controls="manual">Hướng dẫn</button>
+</nav>
+
+<div class="views">
+  <iframe id="v2d" src="2d.html" title="Bản vẽ 2D"></iframe>
+  <iframe id="v3d" title="Mô hình 3D" hidden></iframe>
+  <section id="guide" hidden aria-label="Hướng dẫn dựng 3D với Claude">
+    <div class="g">
+      <header style="display:flex;flex-direction:column;gap:8px">
+        <h1>Từ bản vẽ 2D đến khối 3D</h1>
+        <p class="lead">Có hai đường. Dựng nhanh ngay trong trang này bằng lệnh <code>EXT</code> và <code>REV</code>. Hoặc gửi bản vẽ cho Claude để nhận file STEP đúng hình học, mở được trong Onshape.</p>
+      </header>
+
+      <section>
+        <h2>Dựng nhanh trong trang</h2>
+        <div class="tw"><table>
+          <tr><th>Lệnh</th><th>Cách làm</th><th>Kết quả</th></tr>
+          <tr><td><code>EXT</code> Đùn</td><td>Trong Bản vẽ 2D, quét chọn đường bao kín cùng các lỗ bên trong, gõ chiều dày</td><td>Tấm, gá, mặt bích; mở sang Mô hình 3D để xoay, đo, cắt</td></tr>
+          <tr><td><code>REV</code> Xoay</td><td>Chọn biên dạng, chọn hai điểm trên đường tâm, gõ góc xoay</td><td>Trục, bạc, puly</td></tr>
+          <tr><td>Tải STL</td><td>Nút STL ở trang Mô hình 3D</td><td>Lưới tam giác (mm) cho in 3D hoặc xem nhanh</td></tr>
+        </table></div>
+      </section>
+
+      <section>
+        <h2>Dựng chính xác với Claude</h2>
+        <div class="flow">
+          <div class="step"><b>1 · Gửi file</b><span>DWG, DXF, PDF hoặc ảnh chụp bản vẽ</span></div>
+          <div class="step"><b>2 · Đọc hình chiếu</b><span>Tách view, lỗ, kích thước, ghi chú độ dày</span></div>
+          <div class="step"><b>3 · Dựng khối</b><span>Đùn, xoay, gấp tấm hoặc giao các view</span></div>
+          <div class="step"><b>4 · Xuất</b><span>STEP + STL + ảnh 4 góc nhìn</span></div>
+        </div>
+        <p class="lead" style="margin-top:10px">Gõ <code>/dung-3d</code> kèm bản vẽ trong Claude. File STEP nhận về mở lại được ngay ở tab Mô hình 3D để kiểm tra.</p>
+      </section>
+
+      <section>
+        <h2>Đầu vào Claude đọc được</h2>
+        <div class="tw"><table>
+          <tr><th>Định dạng</th><th>Cách đọc</th><th>Độ chính xác</th></tr>
+          <tr><td>DXF</td><td>Nét thật: đường, cung, tròn, block</td><td class="ok">Cao</td></tr>
+          <tr><td>DWG</td><td>Chuyển sang DXF bằng LibreDWG rồi đọc như DXF</td><td class="ok">Cao</td></tr>
+          <tr><td>PDF xuất từ CAD</td><td>Nét vector, tỉ lệ suy từ một kích thước đã biết</td><td class="ok">Khá</td></tr>
+          <tr><td>Ảnh chụp, PDF scan</td><td>Claude đọc con số kích thước rồi dựng theo số</td><td class="warn">Phụ thuộc độ rõ</td></tr>
+        </table></div>
+      </section>
+
+      <section>
+        <h2>Loại chi tiết</h2>
+        <div class="tw"><table>
+          <tr><th>Chi tiết</th><th>Cách dựng</th></tr>
+          <tr><td>Tấm, gá, mặt bích</td><td>Đùn biên dạng hình chiếu đứng theo độ dày, khoan các lỗ</td></tr>
+          <tr><td>Tấm gấp</td><td>Đường gấp nhìn cạnh + độ dày + chiều rộng, bo bán kính gấp</td></tr>
+          <tr><td>Tiện, tròn xoay</td><td>Xoay nửa biên dạng quanh đường tâm</td></tr>
+          <tr><td>Phay nhiều bậc</td><td>Đùn từng hình chiếu rồi lấy phần giao; hốc, lỗ bậc dựng thêm theo kích thước</td></tr>
+        </table></div>
+      </section>
+
+      <section>
+        <h2>Nối với Onshape</h2>
+        <ol>
+          <li>Ngay bây giờ: tải file <code>.step</code> Claude gửi, trong Onshape chọn <b>Import</b> rồi kéo file vào.</li>
+          <li>Để Claude đẩy thẳng lên Onshape: admin thêm <code>cad.onshape.com</code> vào danh sách tên miền được phép (Organization settings › Capabilities).</li>
+          <li>Tạo API key tại <code>dev-portal.onshape.com/keys</code> (quyền Read + Write) và đưa cho Claude trong phiên làm việc.</li>
+          <li>Claude tạo document và import STEP thành Part Studio.</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Thư viện dùng chung</h2>
+        <div class="row"><p style="flex:1;min-width:220px"><code>cad2d3d.py</code>: thư viện Python (ezdxf, build123d, PyMuPDF, shapely) mà skill <code>/dung-3d</code> dùng để đọc bản vẽ và dựng STEP.</p><button class="btn" id="dlPy" hidden>Tải cad2d3d.py</button></div>
+      </section>
+    </div>
+  </section>
+  <section id="manual" hidden aria-label="Hướng dẫn sử dụng">
+<div class="hd">
+  <header class="hd-head">
+    <p class="hd-eyebrow">Hướng dẫn sử dụng</p>
+    <h1>Xưởng CAD Karofi</h1>
+    <p class="hd-lead">Một trang gồm ba phần: <b>Bản vẽ 2D</b> để xem, vẽ, sửa và đo bản vẽ DWG/DXF; <b>Mô hình 3D</b> để xem, đo và cắt khối 3D; <b>Dựng 3D với Claude</b> để biến bản vẽ thành file STEP. Mọi thứ chạy trong trình duyệt, file không bị tải lên đâu cả.</p>
+    <div class="row"><button class="btn primary" id="dlGuide" hidden>Tải bản PDF</button></div>
+    <nav class="hd-toc" aria-label="Mục lục">
+      <a href="#hd-batdau">1. Bắt đầu</a><a href="#hd-xem">2. Xem bản vẽ</a><a href="#hd-lenh">3. Gõ lệnh</a><a href="#hd-ve">4. Vẽ</a><a href="#hd-chon">5. Chọn đối tượng</a><a href="#hd-sua">6. Sửa</a><a href="#hd-chu">7. Sửa chữ</a><a href="#hd-do">8. Đo</a><a href="#hd-xuat">9. Xuất file</a><a href="#hd-dung3d">10. Dựng 3D nhanh</a><a href="#hd-3d">11. Mô hình 3D</a><a href="#hd-claude">12. Dựng 3D với Claude</a><a href="#hd-phim">13. Phím tắt</a><a href="#hd-luuy">14. Lưu ý</a>
+    </nav>
+  </header>
+
+  <section id="hd-batdau">
+    <h2><span>1</span>Bắt đầu</h2>
+    <ol>
+      <li>Mở link Xưởng CAD. Luôn dùng đúng link này: mọi bản cập nhật đều vào đây.</li>
+      <li>Chọn tab ở trên cùng: <b>Bản vẽ 2D</b>, <b>Mô hình 3D</b>, <b>Dựng 3D với Claude</b> hoặc <b>Hướng dẫn</b>.</li>
+      <li>Bấm <b>Mở file</b> hoặc kéo thả file vào khung. Bản vẽ DWG/DXF tự vào tab 2D; STEP, STL, OBJ… tự vào tab 3D.</li>
+    </ol>
+    <figure><img src="huong-dan/01-tong-quan.jpg" alt="Màn hình Bản vẽ 2D với bản vẽ mẫu tấm gá đỡ bơm" loading="lazy"><figcaption>Tab Bản vẽ 2D khi mở bản vẽ mẫu. Dòng lệnh ở góc dưới bên trái, nút thu phóng ở góc dưới bên phải.</figcaption></figure>
+  </section>
+
+  <section id="hd-xem">
+    <h2><span>2</span>Xem bản vẽ</h2>
+    <div class="hd-grid">
+      <ul>
+        <li><b>Di chuyển:</b> giữ chuột giữa hoặc chuột phải rồi kéo. Trên điện thoại kéo bằng một ngón.</li>
+        <li><b>Thu phóng:</b> lăn chuột, hoặc nút <kbd>+</kbd> <kbd>−</kbd>.</li>
+        <li><b>Vừa khung:</b> nhấp đúp vào chỗ trống, hoặc gõ <kbd>F</kbd> rồi Enter.</li>
+        <li><b>Nền trắng / tối:</b> nút tròn nửa đen ở góc phải.</li>
+        <li><b>Layer:</b> nút <b>Layer</b> để bật, tắt từng lớp nét.</li>
+        <li><b>Toạ độ:</b> hiện ở thanh dưới cùng khi rê chuột.</li>
+      </ul>
+      <figure><img src="huong-dan/11-layer.jpg" alt="Bảng layer với các ô tick" loading="lazy"><figcaption>Bảng Layer: bỏ tick để ẩn lớp.</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="hd-lenh">
+    <h2><span>3</span>Gõ lệnh như AutoCAD</h2>
+    <figure><img src="huong-dan/00-ribbon-1.jpg" alt="Thanh công cụ nhóm Vẽ và Sửa" loading="lazy"><img src="huong-dan/00-ribbon-2.jpg" alt="Thanh công cụ nhóm Đo, 3D và Trợ giúp" loading="lazy"><figcaption>Thanh công cụ: Vẽ · Sửa · Đo · 3D · Trợ giúp (F8 vuông góc, F3 bắt điểm, Kiểu bắt điểm). Chữ dưới mỗi nút chính là tên lệnh.</figcaption></figure>
+    <ul>
+      <li>Gõ tên lệnh ở bất cứ đâu trên bản vẽ (chữ tự vào dòng lệnh), rồi <kbd>Enter</kbd> hoặc <kbd>Space</kbd>. Hoặc bấm nút trên thanh công cụ.</li>
+      <li>Làm theo dòng nhắc màu vàng. Các lựa chọn hiện thành nút nhỏ, bấm hoặc gõ chữ trong ngoặc.</li>
+      <li><kbd>Enter</kbd> / <kbd>Space</kbd> / chuột phải khi đang rảnh: lặp lại lệnh vừa dùng. <kbd>Esc</kbd>: huỷ.</li>
+    </ul>
+    <table>
+      <tr><th>Gõ vào khi lệnh hỏi điểm</th><th>Ý nghĩa</th><th>Ví dụ</th></tr>
+      <tr><td><code>x,y</code></td><td>Toạ độ tuyệt đối</td><td><code>100,50</code></td></tr>
+      <tr><td><code>@dx,dy</code></td><td>Dời so với điểm trước</td><td><code>@160,0</code></td></tr>
+      <tr><td><code>@dài&lt;góc</code></td><td>Theo chiều dài và góc (độ)</td><td><code>@50&lt;45</code></td></tr>
+      <tr><td>Một số</td><td>Đi đúng chiều dài đó theo hướng con trỏ</td><td><code>90</code></td></tr>
+    </table>
+  </section>
+
+  <section id="hd-ve">
+    <h2><span>4</span>Vẽ</h2>
+    <table>
+      <tr><th>Lệnh</th><th>Vẽ gì</th><th>Cách làm</th></tr>
+      <tr><td><code>L</code></td><td>Đường thẳng</td><td>Nhấp các điểm liên tiếp, Enter để xong. <code>C</code> khép kín, <code>U</code> bỏ đoạn vừa vẽ</td></tr>
+      <tr><td><code>PL</code></td><td>Polyline</td><td>Như L nhưng thành một đối tượng</td></tr>
+      <tr><td><code>REC</code></td><td>Hình chữ nhật</td><td>Hai góc đối diện, hoặc góc 1 rồi <code>@rộng,cao</code></td></tr>
+      <tr><td><code>C</code></td><td>Đường tròn</td><td>Tâm, rồi gõ bán kính (<code>D</code> để nhập đường kính)</td></tr>
+      <tr><td><code>A</code></td><td>Cung</td><td>Ba điểm: đầu, giữa, cuối</td></tr>
+      <tr><td><code>T</code></td><td>Chữ</td><td>Điểm đặt, cao chữ, góc xoay, nội dung</td></tr>
+      <tr><td><code>DLI</code> / <code>DAL</code></td><td>Kích thước</td><td>Hai điểm đo rồi vị trí đường kích thước. DLI ngang/đứng, DAL song song</td></tr>
+    </table>
+    <div class="hd-grid">
+      <figure><img src="huong-dan/02-ve-bat-diem.jpg" alt="Đang vẽ đường thẳng, hiện chiều dài, góc và dấu bắt điểm Tâm" loading="lazy"><figcaption>Khi vẽ: hiện chiều dài và góc cạnh con trỏ. Dấu vàng là điểm bắt (ở đây là Tâm).</figcaption></figure>
+      <figure><img src="huong-dan/08-ghi-kich-thuoc.jpg" alt="Kích thước 60 và dòng chữ ghi chú vừa thêm" loading="lazy"><figcaption>Kích thước DAL (60.00) và chữ ghi chú vừa thêm.</figcaption></figure>
+    </div>
+    <p class="hd-tip"><b>Bắt điểm (F3)</b> tự hút vào điểm cuối, trung điểm, tâm, góc phần tư, giao điểm. Bấm <b>Kiểu</b> để bật thêm Vuông góc, Gần nhất. <b>F8</b> khoá nét theo phương ngang/đứng. Ô <b>Màu</b>, <b>Cỡ chữ</b>, <b>Số lẻ</b> ở cuối thanh công cụ.</p>
+  </section>
+
+  <section id="hd-chon">
+    <h2><span>5</span>Chọn đối tượng</h2>
+    <div class="hd-grid3">
+      <figure><img src="huong-dan/03-quet-phai.jpg" alt="Khung chọn xanh dương" loading="lazy"><figcaption><b>Quét sang phải</b> (khung xanh dương): chọn đối tượng nằm trọn trong khung.</figcaption></figure>
+      <figure><img src="huong-dan/05-quet-trai.jpg" alt="Khung chọn xanh lá nét đứt" loading="lazy"><figcaption><b>Quét sang trái</b> (xanh lá, nét đứt): chọn cả đối tượng chạm khung.</figcaption></figure>
+      <figure><img src="huong-dan/04-da-chon.jpg" alt="Các đối tượng đã chọn hiện nét đứt xanh" loading="lazy"><figcaption>Đã chọn: nét đứt màu xanh, số lượng hiện ở thanh dưới.</figcaption></figure>
+    </div>
+    <ul>
+      <li>Nhấp vào một nét để chọn. Rê chuột sẽ thấy nét sáng lên trước.</li>
+      <li>Giữ chuột trái kéo, hoặc nhấp hai góc để quét. <kbd>Shift</kbd> + nhấp/quét để bỏ bớt.</li>
+      <li><kbd>Ctrl+A</kbd> chọn hết. <kbd>Esc</kbd> bỏ chọn. <kbd>Delete</kbd> xoá phần đang chọn.</li>
+      <li><b>Điểm nắm (grip):</b> đối tượng đang chọn hiện các ô vuông xanh (đầu mút, trung điểm, đỉnh, tâm, góc phần tư). Nhấn giữ ô vuông rồi <b>kéo thả</b>, hoặc nhấp ô vuông rồi nhấp điểm mới (gõ được <code>@dx,dy</code>). Ô trung điểm của đường thẳng và ô tâm sẽ dời cả đối tượng; ô góc phần tư đổi bán kính.</li>
+    </ul>
+  </section>
+
+  <section id="hd-sua">
+    <h2><span>6</span>Sửa</h2>
+    <p>Chọn trước rồi gõ lệnh, hoặc gõ lệnh rồi chọn và bấm Enter. Sửa được cả nét gốc trong file, block, chữ và nét bạn vẽ thêm.</p>
+    <div class="hd-grid">
+      <table>
+        <tr><th>Lệnh</th><th>Việc</th></tr>
+        <tr><td><code>M</code></td><td>Di chuyển: điểm gốc → điểm đến</td></tr>
+        <tr><td><code>CO</code></td><td>Sao chép, đặt nhiều bản liên tiếp</td></tr>
+        <tr><td><code>RO</code></td><td>Xoay: tâm xoay → góc (gõ số độ)</td></tr>
+        <tr><td><code>SC</code></td><td>Co giãn theo hệ số; <code>R</code> để co theo chiều dài thật</td></tr>
+        <tr><td><code>MI</code></td><td>Đối xứng qua trục 2 điểm, chọn giữ/xoá bản gốc</td></tr>
+        <tr><td><code>E</code></td><td>Xoá (hoặc phím Delete)</td></tr>
+        <tr><td><code>G</code> / <code>UG</code></td><td>Nhóm / bỏ nhóm: nhấp một đối tượng trong nhóm sẽ chọn cả nhóm</td></tr>
+        <tr><td><code>X</code></td><td>Phá khối: block → nét rời, polyline → các đoạn thẳng, kích thước → nét + chữ; nhóm thì bỏ nhóm</td></tr>
+        <tr><td><code>U</code> / <code>REDO</code></td><td>Hoàn tác / làm lại (Ctrl+Z / Ctrl+Y)</td></tr>
+      </table>
+      <figure><img src="huong-dan/10-xoay.jpg" alt="Đang xoay cụm lỗ, hiện bóng xem trước và góc 45 độ" loading="lazy"><figcaption>Lệnh RO: bóng xanh cho thấy vị trí mới trước khi nhấp.</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="hd-chu">
+    <h2><span>7</span>Sửa chữ có sẵn</h2>
+    <div class="hd-grid">
+      <ul>
+        <li><b>Nhấp đúp</b> vào dòng chữ, hoặc gõ <code>ED</code> rồi nhấp chữ.</li>
+        <li>Sửa nội dung, chiều cao chữ (ô <b>Cao</b>). <kbd>Enter</kbd> lưu, <kbd>Shift+Enter</kbd> xuống dòng, <kbd>Esc</kbd> huỷ.</li>
+        <li>Sửa được chữ trong khung tên (block) và chữ kích thước. Với kích thước, <code>&lt;&gt;</code> là số đo thật, ví dụ <code>L = &lt;&gt; mm</code>.</li>
+      </ul>
+      <figure><img src="huong-dan/09-sua-chu.jpg" alt="Ô sửa chữ hiện cạnh dòng HÌNH CHIẾU ĐỨNG" loading="lazy"><figcaption>Ô sửa chữ mở ngay cạnh dòng chữ.</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="hd-do">
+    <h2><span>8</span>Đo</h2>
+    <table>
+      <tr><th>Lệnh</th><th>Đo gì</th><th>Cách làm</th></tr>
+      <tr><td><code>DI</code></td><td>Khoảng cách, ΔX, ΔY, góc</td><td>Nhấp 2 điểm</td></tr>
+      <tr><td><code>AA</code></td><td>Diện tích, chu vi</td><td>Nhấp các góc rồi Enter; hoặc gõ <code>O</code> rồi nhấp vào đường bao kín</td></tr>
+      <tr><td><code>ANG</code></td><td>Góc</td><td>Đỉnh góc → điểm cạnh 1 → điểm cạnh 2</td></tr>
+      <tr><td><code>RAD</code></td><td>Bán kính, đường kính, tâm</td><td>Nhấp vào cung hoặc đường tròn</td></tr>
+      <tr><td><code>ID</code></td><td>Toạ độ một điểm</td><td>Nhấp điểm</td></tr>
+    </table>
+    <div class="hd-grid">
+      <figure><img src="huong-dan/06-do-khoang-cach.jpg" alt="Ô kết quả khoảng cách 160 mm" loading="lazy"><figcaption>DI: chiều dài tấm 160.00 mm. Bấm <b>Chép</b> để copy kết quả.</figcaption></figure>
+      <figure><img src="huong-dan/07-do-dien-tich.jpg" alt="Vùng diện tích tô xanh và ô kết quả" loading="lazy"><figcaption>AA → O: diện tích 14 344.74 mm², chu vi 486.25 mm.</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="hd-xuat">
+    <h2><span>9</span>Xuất file</h2>
+    <div class="hd-grid">
+      <ul>
+        <li><b>Xuất DXF:</b> lưu toàn bộ bản vẽ kèm chỉnh sửa, mở được bằng AutoCAD. Block được phá thành nét rời.</li>
+        <li><b>Xuất PDF:</b> chọn khổ giấy A4–A0, hướng, vùng in (toàn bộ / đang xem / quét khung), màu, độ dày nét. <b>Xem trước</b> rồi <b>Tải PDF</b>.</li>
+        <li>Trình duyệt sẽ hỏi trước khi lưu file về máy.</li>
+      </ul>
+      <figure><img src="huong-dan/12-xuat-pdf.jpg" alt="Hộp thoại Xuất PDF" loading="lazy"><figcaption>Hộp thoại Xuất PDF, có ghi tỉ lệ in.</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="hd-dung3d">
+    <h2><span>10</span>Dựng 3D nhanh từ bản vẽ</h2>
+    <ol>
+      <li>Gõ <code>EXT</code> (đùn) hoặc bấm nút EXT trong nhóm 3D.</li>
+      <li>Quét chọn đường bao kín cùng các lỗ bên trong, bấm Enter.</li>
+      <li>Gõ chiều dày, Enter. Trang tự chuyển sang tab Mô hình 3D.</li>
+    </ol>
+    <div class="hd-grid">
+      <figure><img src="huong-dan/13-ext-chon.jpg" alt="Quét chọn tấm để đùn" loading="lazy"><figcaption>Quét chọn cả tấm và các lỗ.</figcaption></figure>
+      <figure><img src="huong-dan/15-3d.jpg" alt="Khối 3D tấm gá dày 6 mm" loading="lazy"><figcaption>Kết quả: tấm 160 × 90 × 6 mm với đủ lỗ.</figcaption></figure>
+    </div>
+    <p class="hd-tip"><b>REV</b> (xoay) dùng cho trục, bạc: chọn biên dạng, chọn 2 điểm trên đường tâm, gõ góc (mặc định 360°). Khối dựng nhanh là lưới tam giác, tải được STL. Muốn file STEP để sửa trong Onshape thì xem mục 12.</p>
+  </section>
+
+  <section id="hd-3d">
+    <h2><span>11</span>Mô hình 3D</h2>
+    <ul>
+      <li><b>Mở:</b> STEP, STP, IGES, BREP, STL, OBJ, PLY, 3MF, GLB, glTF, FBX.</li>
+      <li><b>Điều khiển:</b> kéo trái để xoay, kéo phải để dời, lăn để phóng, nhấp để chọn chi tiết.</li>
+      <li><b>Hướng nhìn:</b> nút Trước, Phải, Trên, ISO… góc dưới trái (phím <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>0</kbd>).</li>
+      <li><b>Kiểu hiển thị:</b> Khối + cạnh, Khối, Khung dây, Xuyên thấu.</li>
+      <li><b>Chi tiết:</b> danh sách chi tiết, kích thước bao, thể tích, diện tích bề mặt.</li>
+      <li><b>STL</b> tải lưới về máy; <b>Ảnh</b> lưu ảnh khung nhìn.</li>
+      <li><b>File STEP lớn:</b> được đọc ở luồng nền nên trang không bị treo. Khung chờ hiện số giây đã chạy và RAM ước tính (cụm 20 MB cần khoảng 1 GB). Bấm <b>Huỷ</b> hoặc <kbd>Esc</kbd> để dừng. Nếu báo thiếu bộ nhớ, đóng bớt tab rồi mở lại.</li>
+    </ul>
+    <div class="hd-grid">
+      <figure><img src="huong-dan/16-3d-do.jpg" alt="Đo khoảng cách hai điểm trên khối 3D" loading="lazy"><figcaption><b>Đo</b> (M): nhấp hai điểm trên bề mặt.</figcaption></figure>
+      <figure><img src="huong-dan/17-3d-mat-cat.jpg" alt="Mặt cắt theo trục X" loading="lazy"><figcaption><b>Mặt cắt</b> (C): chọn trục X/Y/Z, kéo thanh trượt, ⇅ đảo phía.</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="hd-claude">
+    <h2><span>12</span>Dựng 3D chính xác với Claude (file STEP)</h2>
+    <ol>
+      <li>Trong khung chat Claude, gửi bản vẽ (DWG, DXF, PDF hoặc ảnh chụp) và gõ <code>/dung-3d</code>.</li>
+      <li>Claude đọc các hình chiếu, kích thước, độ dày; dựng khối và gửi lại <b>STEP</b>, STL, ảnh 4 góc nhìn kèm ghi chú các giả định.</li>
+      <li>Mở file STEP ở tab Mô hình 3D để kiểm tra, rồi <b>Import</b> vào Onshape.</li>
+    </ol>
+    <figure><img src="huong-dan/18-claude.jpg" alt="Tab Dựng 3D với Claude" loading="lazy"><figcaption>Tab Dựng 3D với Claude: quy trình, định dạng đọc được, các bước nối Onshape.</figcaption></figure>
+  </section>
+
+  <section id="hd-phim">
+    <h2><span>13</span>Phím tắt</h2>
+    <table class="hd-keys">
+      <tr><th>Phím</th><th>Bản vẽ 2D</th><th>Phím</th><th>Mô hình 3D</th></tr>
+      <tr><td><kbd>Enter</kbd> <kbd>Space</kbd></td><td>Xác nhận / lặp lệnh</td><td><kbd>F</kbd></td><td>Vừa khung</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>Huỷ lệnh, bỏ chọn</td><td><kbd>M</kbd></td><td>Đo</td></tr>
+      <tr><td><kbd>F3</kbd></td><td>Bật/tắt bắt điểm</td><td><kbd>C</kbd></td><td>Mặt cắt</td></tr>
+      <tr><td><kbd>F8</kbd></td><td>Vẽ vuông góc</td><td><kbd>E</kbd></td><td>Đổi kiểu hiển thị</td></tr>
+      <tr><td><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd></td><td>Hoàn tác / làm lại</td><td><kbd>P</kbd></td><td>Song song / phối cảnh</td></tr>
+      <tr><td><kbd>Ctrl+A</kbd></td><td>Chọn hết</td><td><kbd>G</kbd></td><td>Lưới nền</td></tr>
+      <tr><td><kbd>Delete</kbd></td><td>Xoá phần đang chọn</td><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>0</kbd></td><td>Trước, phải, trên, ISO</td></tr>
+    </table>
+  </section>
+
+  <section id="hd-luuy">
+    <h2><span>14</span>Lưu ý</h2>
+    <ul>
+      <li>Chỉnh sửa trên bản vẽ chỉ giữ tới khi mở file khác. Nhớ <b>Xuất DXF</b> trước.</li>
+      <li>Vùng tô đặc (hatch) có sẵn trong file chưa di chuyển, xoá được.</li>
+      <li>Chỉ dùng link Xưởng CAD. Bản tải về máy không tự cập nhật.</li>
+      <li>Người khác chỉ mở được khi chủ trang đã bấm <b>Share</b> cho họ.</li>
+    </ul>
+  </section>
+</div>
+
+  </section>
+</div>
+<div id="toast" hidden></div>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const f2 = $('#v2d'), f3 = $('#v3d'), guide = $('#guide');
+  let ready3 = false, queue3 = [];
+  const pane = { '2d': f2, '3d': f3, 'claude': guide, 'huong-dan': $('#manual') };
+  document.querySelectorAll('.hd-toc a').forEach(a => a.addEventListener('click', (e) => { e.preventDefault(); const t = document.querySelector(a.getAttribute('href')); if (t) t.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); }));
+  let toastT; function toast(m) { const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 4000); }
+  function load3() { if (!f3.getAttribute('src')) f3.src = '3d.html'; }
+  function show(v, focus) {
+    if (!pane[v]) v = '2d';
+    for (const [k, el] of Object.entries(pane)) el.hidden = k !== v;
+    document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.v === v));
+    if (v === '3d') load3();
+    if (location.hash.slice(1) !== v) history.replaceState(null, '', '#' + v);
+    try { localStorage.setItem('xuong-cad-tab', v); } catch (_) {}
+    if (focus && pane[v].tagName === 'IFRAME') setTimeout(() => { try { pane[v].contentWindow.focus(); } catch (_) {} }, 30);
+  }
+  function to3(msg) { load3(); show('3d', true); if (ready3) f3.contentWindow.postMessage(msg, '*'); else queue3.push(msg); }
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => show(t.dataset.v, true)));
+  window.addEventListener('message', (e) => {
+    const d = e.data; if (!d || typeof d !== 'object') return;
+    if (e.source === f3.contentWindow && d.type === 'v3d-ready') { ready3 = true; for (const m of queue3) f3.contentWindow.postMessage(m, '*'); queue3 = []; return; }
+    if (e.source === f2.contentWindow && (d.type === 'build3d' || d.type === 'open3d')) { to3(d); $('#t3d').classList.add('has'); return; }
+    if (e.source === f3.contentWindow && d.type === 'open2d') { show('2d', true); f2.contentWindow.postMessage(d, '*'); toast('Đã chuyển bản vẽ sang tab Bản vẽ 2D.'); }
+  });
+  // deep link: #3d/mo-hinh/<file> opens a model published into this page in the 3D tab
+  function deep(h) { const m = h.match(/^3d\/(mo-hinh\/[^?#]+)$/); if (!m) return false; to3({ type: 'openPath', path: decodeURIComponent(m[1]) }); $('#t3d').classList.add('has'); return true; }
+  window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (!deep(h)) show(h); });
+  let start = location.hash.slice(1);
+  if (!deep(start)) {
+    if (!pane[start]) { try { start = localStorage.getItem('xuong-cad-tab') || '2d'; } catch (_) { start = '2d'; } }
+    show(start);
+  }
+  // tải thư viện Python (downloads capability)
+  (async () => {
+    try {
+      let dl = null; try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (_) {}
+      // outside claude.ai: plain browser download
+      if (!dl) dl = { save: async ({ filename, data }) => { const u = URL.createObjectURL(data), a = document.createElement('a'); a.href = u; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000); } };
+      const b = $('#dlPy'); b.hidden = false;
+      const g = $('#dlGuide'); g.hidden = false;
+      g.addEventListener('click', async () => {
+        try { const r = await fetch('huong-dan/Huong-dan-Xuong-CAD.pdf'); await dl.save({ filename: 'Huong-dan-Xuong-CAD.pdf', data: await r.blob() }); toast('Đã lưu Huong-dan-Xuong-CAD.pdf'); }
+        catch (e) { if (!(e && e.code === 'declined')) toast('Không lưu được file. Thử lại sau giây lát.'); }
+      });
+      b.addEventListener('click', async () => {
+        try { const r = await fetch('cad2d3d.py'); await dl.save({ filename: 'cad2d3d.py', data: await r.blob() }); toast('Đã lưu cad2d3d.py'); }
+        catch (e) { if (!(e && e.code === 'declined')) toast('Không lưu được file. Thử lại sau giây lát.'); }
+      });
+    } catch (_) {}
+  })();
+})();
+</script>
+
+</body></html>
