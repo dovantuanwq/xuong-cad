@@ -89,6 +89,18 @@ main{flex:1;min-height:0;display:flex;position:relative}
 /* measure labels */
 .mlabel{position:absolute;transform:translate(-50%,-50%);background:var(--measure);color:#fff;font:500 12px var(--mono);padding:2px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;z-index:2;font-variant-numeric:tabular-nums}
 .mlabel small{opacity:.85;font-weight:400}
+/* 3D measuring object snap marker (same shapes as 2D OSNAP) */
+#snap3{position:absolute;pointer-events:none;z-index:3}
+#snap3[hidden]{display:none}
+#snap3 i{position:absolute;left:-7px;top:-7px;width:14px;height:14px;box-sizing:border-box;border:2px solid #ffd400}
+#snap3[data-t="mid"] i{border:0;width:0;height:0;left:-8px;top:-8px;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid #ffd400;background:none}
+#snap3[data-t="mid"] i::after{content:"";position:absolute;left:-5px;top:4px;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid #1b1f24}
+#snap3[data-t="cen"] i{border-radius:50%}
+#snap3[data-t="qua"] i{transform:rotate(45deg)}
+#snap3[data-t="nea"] i{transform:rotate(45deg) scale(.85)}
+#snap3[data-t="face"] i{width:8px;height:8px;left:-4px;top:-4px;border:2px solid #ff9f5a;border-radius:50%}
+#snap3 span{position:absolute;left:12px;top:10px;white-space:nowrap;font:12px var(--mono);color:#ffd400;background:rgba(20,24,30,.9);padding:2px 6px;border-radius:4px}
+#snap3[data-t="face"] span{color:#ffcfa8}
 #mhint{position:absolute;left:50%;transform:translateX(-50%);top:12px;background:var(--measure);color:#fff;border-radius:6px;padding:5px 12px;font-size:13px;display:none;z-index:3}
 .measuring #mhint{display:block}
 .measuring.sectioning #mhint{top:58px}
@@ -194,7 +206,7 @@ footer{display:flex;gap:16px;align-items:center;flex-wrap:wrap;font:12px var(--m
       <output id="sectOut">—</output>
       <button class="flip" id="sectFlip" title="Đảo phía giữ lại">⇅</button>
     </div>
-    <div id="mhint">Nhấp hai điểm trên mô hình để đo · Esc để thoát</div>
+    <div id="mhint">Nhấp hai điểm để đo · tự bắt điểm cuối, trung điểm, tâm lỗ, cạnh · giữ Alt để đo điểm bất kỳ trên mặt · Esc để thoát</div>
     <div id="labels"></div>
     <div class="views needs-model" role="group" aria-label="Hướng nhìn">
       <button class="tool" data-view="front" title="Nhìn trước (1)">Trước</button>
@@ -822,7 +834,7 @@ canvas.addEventListener('pointerup', e => {
   const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5; down = null;
   if (moved) return;
   const h = pick(e);
-  if (measuring) { if (h) addMeasurePoint(h.point); return; }
+  if (measuring) { const s = snap3At(e); if (s) { addMeasurePoint(s.p); showSnap3(snap3At(e)); } return; }
   select(h ? partOf(h.object) : null);
 });
 canvas.addEventListener('dblclick', e => { if (measuring) return; const h = pick(e); if (h) { controls.target.copy(h.point); controls.update(); requestRender(); } else fitKeepDirection(); });
@@ -867,7 +879,134 @@ function setMeasuring(on) {
   measuring = on; stage.classList.toggle('measuring', on); $('#measureBtn').setAttribute('aria-pressed', String(on));
   if (on) select(null);
   if (!on && pending) { helpers.remove(pending.da); pending = null; requestRender(); }
+  if (!on) hideSnap3();
 }
+
+// ---------- object snap for 3D measuring ----------
+// Each mesh's feature edges (EdgesGeometry, 25°) are welded into chains, then split at corners into
+// straight runs (→ end points, midpoint) and curved runs fitted to circles (→ centre, arc ends).
+// While measuring, the point under the cursor snaps to the nearest of those, like OSNAP in 2D.
+// Hold Alt to measure a raw surface point.
+const SNAP3_PX = 12;
+const SNAP3_LBL = { end: 'Điểm cuối', mid: 'Trung điểm', cen: 'Tâm', qua: 'Góc phần tư', nea: 'Trên cạnh', face: 'Trên mặt' };
+function circle3(a, b, c) {
+  const ab = b.clone().sub(a), ac = c.clone().sub(a), n = ab.clone().cross(ac), n2 = n.lengthSq();
+  if (n2 < 1e-18) return null;
+  const t1 = n.clone().cross(ab).multiplyScalar(ac.lengthSq()), t2 = ac.clone().cross(n).multiplyScalar(ab.lengthSq());
+  const ctr = a.clone().add(t1.add(t2).multiplyScalar(1 / (2 * n2)));
+  return { c: ctr, r: ctr.distanceTo(a), n: n.normalize() };
+}
+function snapData(mesh) {
+  mesh.updateWorldMatrix(true, false);
+  const key = mesh.matrixWorld.elements.map(v => v.toFixed(6)).join(',');
+  const cached = mesh.userData.snap3; if (cached && cached.key === key) return cached;
+  const eg = (mesh.userData.edges && mesh.userData.edges.geometry) || new THREE.EdgesGeometry(mesh.geometry, 25);
+  const P = eg.attributes.position, nSeg = P.count / 2, mw = mesh.matrixWorld;
+  const box = new THREE.Box3().setFromBufferAttribute(P), tol = Math.max(box.getSize(new THREE.Vector3()).length() * 1e-6, 1e-9);
+  // weld endpoints → nodes
+  const nodes = [], idx = new Map(), adj = [];
+  const nodeOf = (i) => { const v = new THREE.Vector3().fromBufferAttribute(P, i).applyMatrix4(mw); const k = Math.round(v.x / tol) + ',' + Math.round(v.y / tol) + ',' + Math.round(v.z / tol); let id = idx.get(k); if (id === undefined) { id = nodes.length; nodes.push(v); adj.push([]); idx.set(k, id); } return id; };
+  for (let s = 0; s < nSeg; s++) { const a = nodeOf(2 * s), b = nodeOf(2 * s + 1); if (a !== b) { adj[a].push(b); adj[b].push(a); } }
+  // trace chains between junctions/ends, then the remaining closed loops
+  const used = new Set(), ek = (a, b) => a < b ? a + '_' + b : b + '_' + a, chains = [];
+  const walk = (start, next) => { const ch = [start]; let prev = start, cur = next; used.add(ek(start, next)); for (;;) { ch.push(cur); if (adj[cur].length !== 2) break; const nx = adj[cur][0] === prev ? adj[cur][1] : adj[cur][0]; if (used.has(ek(cur, nx))) break; used.add(ek(cur, nx)); prev = cur; cur = nx; } return ch; };
+  for (let i = 0; i < nodes.length; i++) if (adj[i].length !== 2) for (const j of adj[i]) if (!used.has(ek(i, j))) chains.push(walk(i, j));
+  for (let i = 0; i < nodes.length; i++) for (const j of adj[i]) if (!used.has(ek(i, j))) chains.push(walk(i, j));
+  const lines = [], arcs = [], ends = [];
+  const turnAt = (ch, k) => { const a = nodes[ch[k - 1]], b = nodes[ch[k]], c = nodes[ch[k + 1]]; return b.clone().sub(a).angleTo(c.clone().sub(b)); };
+  for (const ch of chains) {
+    const closed = ch.length > 3 && ch[0] === ch[ch.length - 1];
+    // split at corners (turn > 30°)
+    const cuts = [0]; for (let k = 1; k < ch.length - 1; k++) if (turnAt(ch, k) > Math.PI / 6) cuts.push(k); cuts.push(ch.length - 1);
+    for (let q = 0; q + 1 < cuts.length; q++) {
+      const run = ch.slice(cuts[q], cuts[q + 1] + 1).map(i => nodes[i]); if (run.length < 2) continue;
+      let maxTurn = 0; for (let k = 1; k < run.length - 1; k++) maxTurn = Math.max(maxTurn, run[k].clone().sub(run[k - 1]).angleTo(run[k + 1].clone().sub(run[k])));
+      const isLoop = closed && cuts.length === 2;
+      if (run.length >= 4 && maxTurn > 0.004) {
+        const C = circle3(run[0], run[Math.floor(run.length / 3)], run[Math.floor(2 * run.length / 3)]);
+        if (C && C.r > tol * 10 && run.every(p => Math.abs(p.distanceTo(C.c) - C.r) < C.r * 0.02)) {
+          // quadrant points of full circles, aligned to world X/Y projected into the circle's plane
+          let q = [];
+          if (isLoop) {
+            let u = new THREE.Vector3(1, 0, 0).projectOnPlane(C.n); if (u.lengthSq() < 1e-6) u = new THREE.Vector3(0, 1, 0).projectOnPlane(C.n);
+            u.normalize(); const v = C.n.clone().cross(u).normalize();
+            q = [u, v, u.clone().negate(), v.clone().negate()].map(d => C.c.clone().addScaledVector(d, C.r));
+          }
+          arcs.push({ c: C.c, r: C.r, pts: run, full: isLoop, q });
+          if (!isLoop) ends.push(run[0], run[run.length - 1]);
+          continue;
+        }
+      }
+      if (maxTurn < 0.01) { lines.push([run[0], run[run.length - 1]]); ends.push(run[0], run[run.length - 1]); }
+      else for (let k = 0; k + 1 < run.length; k++) { lines.push([run[k], run[k + 1]]); ends.push(run[k], run[k + 1]); }
+    }
+  }
+  const data = { key, lines, arcs, ends };
+  mesh.userData.snap3 = data; return data;
+}
+const _v = new THREE.Vector3();
+function toPx(p) { const r = canvas.getBoundingClientRect(); _v.copy(p).project(camera); return [(_v.x + 1) / 2 * r.width, (1 - _v.y) / 2 * r.height, _v.z]; }
+function closestOnSeg(p, a, b) { const ab = b.clone().sub(a), t = Math.max(0, Math.min(1, p.clone().sub(a).dot(ab) / (ab.lengthSq() || 1))); return a.clone().add(ab.multiplyScalar(t)); }
+function snap3At(ev) {
+  const h = pick(ev); if (!h) return null;
+  const face = { type: 'face', p: h.point.clone() };
+  if (ev.altKey) return face;
+  const r = canvas.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top;
+  const camDist = camera.isPerspectiveCamera ? camera.position.distanceTo(h.point) : 0;
+  const wpp = camera.isPerspectiveCamera ? 2 * camDist * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / r.height : (camera.top - camera.bottom) / camera.zoom / r.height;
+  const R = SNAP3_PX * wpp * 3;                       // world radius for candidate pre-filter
+  const D = snapData(h.object), hit = h.point;
+  const visible = (p, extra) => !camera.isPerspectiveCamera || camera.position.distanceTo(p) <= camDist + wpp * 6 + (extra || 0);
+  const sd = (p) => { const s = toPx(p); return Math.hypot(s[0] - mx, s[1] - my); };
+  let best = null; const take = (type, p, pri) => { const d = sd(p); if (d <= SNAP3_PX && (!best || pri < best.pri || (pri === best.pri && d < best.d))) best = { type, p: p.clone(), d, pri }; };
+  for (const p of D.ends) if (p.distanceTo(hit) < R && visible(p)) take('end', p, 0);
+  for (const [a, b] of D.lines) {
+    const q = closestOnSeg(hit, a, b); if (q.distanceTo(hit) > R) continue;
+    const m = a.clone().add(b).multiplyScalar(0.5); if (visible(m)) take('mid', m, 1);
+    if (visible(q)) take('nea', q, 3);
+  }
+  for (const A of D.arcs) {
+    // hovering the rim of a hole/arc offers its centre (centre may sit inside the hole: allow its radius in depth)
+    let near = null, nd = Infinity;
+    for (let k = 0; k + 1 < A.pts.length; k++) { const q = closestOnSeg(hit, A.pts[k], A.pts[k + 1]); const dd = q.distanceTo(hit); if (dd < nd) { nd = dd; near = q; } }
+    if (A.full) { const q = closestOnSeg(hit, A.pts[A.pts.length - 1], A.pts[0]); if (q.distanceTo(hit) < nd) { nd = q.distanceTo(hit); near = q; } }
+    const onRim = near && nd < R && sd(near) <= SNAP3_PX;
+    if ((onRim || sd(A.c) <= SNAP3_PX) && visible(A.c, A.r)) {
+      const d = onRim ? 0.5 : sd(A.c);
+      if (!best || best.pri > 2 || (best.pri === 2 && d < best.d)) best = { type: 'cen', p: A.c.clone(), d, pri: 2 };
+    }
+    if (onRim) for (const q of A.q) if (visible(q)) take('qua', q, 1);
+    if (onRim && visible(near)) take('nea', near, 3);
+  }
+  return best ? { type: best.type, p: best.p } : face;
+}
+// marker + rubber band
+const snapMk = document.createElement('div'); snapMk.id = 'snap3'; snapMk.hidden = true;
+snapMk.innerHTML = '<i></i><span></span>'; $('#labels').appendChild(snapMk);
+let rubber = null, snapCur = null, snapRaf = 0, snapEv = null;
+function hideSnap3() { snapMk.hidden = true; snapCur = null; if (rubber) { helpers.remove(rubber); rubber.geometry.dispose(); rubber.material.dispose(); rubber = null; requestRender(); } }
+function showSnap3(s) {
+  snapCur = s;
+  if (!s) { snapMk.hidden = true; if (rubber) rubber.visible = false; requestRender(); return; }
+  const [x, y] = toPx(s.p); snapMk.hidden = false; snapMk.dataset.t = s.type;
+  snapMk.style.left = x + 'px'; snapMk.style.top = y + 'px';
+  let txt = SNAP3_LBL[s.type];
+  if (pending) {
+    txt += ' · ' + fmtLen(pending.a.distanceTo(s.p));
+    if (!rubber) { rubber = new THREE.Line(new THREE.BufferGeometry().setFromPoints([pending.a, s.p]), new THREE.LineDashedMaterial({ color: 0xff7a1a, dashSize: 1, gapSize: 1, depthTest: false })); rubber.renderOrder = 9; helpers.add(rubber); }
+    rubber.geometry.setFromPoints([pending.a, s.p]); rubber.visible = true;
+    const L = pending.a.distanceTo(s.p) || 1; rubber.material.dashSize = L / 40; rubber.material.gapSize = L / 60; rubber.computeLineDistances();
+  } else if (rubber) rubber.visible = false;
+  snapMk.querySelector('span').textContent = txt;
+  requestRender();
+}
+canvas.addEventListener('pointermove', (e) => {
+  if (!measuring || e.buttons) { if (measuring && e.buttons) showSnap3(null); return; }
+  snapEv = e; if (snapRaf) return;
+  snapRaf = requestAnimationFrame(() => { snapRaf = 0; if (snapEv) showSnap3(snap3At(snapEv)); });
+});
+canvas.addEventListener('pointerleave', () => { if (measuring) showSnap3(null); });
+window.addEventListener('keydown', (e) => { if (e.key === 'Alt' && measuring && snapEv) showSnap3(snap3At(Object.assign({}, snapEv, { altKey: true, clientX: snapEv.clientX, clientY: snapEv.clientY }))); });
 $('#measureBtn').addEventListener('click', () => {
   if (measuring) { setMeasuring(false); clearMeasures(); } else setMeasuring(true);
 });

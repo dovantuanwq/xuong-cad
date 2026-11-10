@@ -11503,11 +11503,16 @@ document.querySelector('label[for="file"]').addEventListener("keydown",e=>{if(e.
   }
 
   /* ---------- object snap (OSNAP) ---------- */
-  const snapModes = { end: true, mid: true, cen: true, qua: true, int: true, per: false, nea: false };
+  // "Gần nhất" (nearest point on a line) is on by default so DI / AA / ANG… snap anywhere along an edge;
+  // it has the lowest priority, so end/mid/centre/intersection still win when they are close.
+  const snapModes = { end: true, mid: true, cen: true, qua: true, int: true, per: false, nea: true };
   let snapOn = true;
-  try { const sv = JSON.parse(localStorage.getItem('cad-osnap') || 'null'); if (sv) { Object.assign(snapModes, sv.modes || {}); snapOn = sv.on !== false; } } catch (_) {}
+  try {
+    const sv = JSON.parse(localStorage.getItem('cad-osnap') || 'null');
+    if (sv) { Object.assign(snapModes, sv.modes || {}); snapOn = sv.on !== false; if (!sv.v2) snapModes.nea = true; }
+  } catch (_) {}
   try { state.ortho = localStorage.getItem('cad-ortho') === '1'; } catch (_) {}
-  function saveSnap() { try { localStorage.setItem('cad-osnap', JSON.stringify({ on: snapOn, modes: snapModes })); localStorage.setItem('cad-ortho', state.ortho ? '1' : '0'); } catch (_) {} }
+  function saveSnap() { try { localStorage.setItem('cad-osnap', JSON.stringify({ on: snapOn, modes: snapModes, v2: 1 })); localStorage.setItem('cad-ortho', state.ortho ? '1' : '0'); } catch (_) {} }
   function syncSnapUI() {
     document.querySelectorAll('.osnapAll').forEach(b => b.setAttribute('aria-pressed', snapOn));
     document.querySelectorAll('[data-snap]').forEach(b => b.setAttribute('aria-pressed', snapOn && snapModes[b.dataset.snap]));
