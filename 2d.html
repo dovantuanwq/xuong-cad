@@ -307,6 +307,35 @@ footer{border-radius:999px;border:0}
 aside{border-radius:26px;background:var(--lg-tint-strong)}
 #tedit{border-radius:20px;background:var(--lg-tint-strong)}
 #dxfDlg .dlg,#pdfDlg .dlg{border-radius:26px}
+/* ===== input mode: Chuột / Cảm ứng ===== */
+#bTouch .ic-touch{display:none}
+body.touch #bTouch .ic-touch{display:block}body.touch #bTouch .ic-mouse{display:none}
+body.touch #bTouch{color:var(--accent)}
+#touchBar{display:none;position:absolute;z-index:5;left:50%;transform:translateX(-50%);bottom:calc(var(--gap) + 92px);gap:4px;padding:5px;border-radius:999px;
+  background:var(--lg-tint-strong);-webkit-backdrop-filter:var(--lg-blur);backdrop-filter:var(--lg-blur);
+  box-shadow:inset 1.5px 1.5px 0 -.5px var(--lg-hi),inset -1px -1px 0 -.5px var(--lg-hi2),0 8px 26px rgba(0,0,0,.26);max-width:calc(100% - 2*var(--gap));overflow-x:auto;scrollbar-width:none}
+#touchBar::-webkit-scrollbar{display:none}
+#touchBar button{flex:none;height:40px;min-width:44px;padding:0 14px;border:0;border-radius:999px;background:var(--lg-press);color:var(--fg);font:500 14px var(--sans);cursor:pointer;transition:transform .45s cubic-bezier(.25,1.7,.45,1)}
+#touchBar button:active{transform:scale(1.1)}
+#touchBar button[data-ta="enter"]{background:var(--accent);color:var(--accent-fg)}
+body.touch #touchBar{display:flex}
+body.paper #touchBar{--lg-tint-strong:rgba(255,255,255,.8);--fg:#16202b;--lg-press:rgba(20,32,48,.08);--accent:#1f5fbf;--accent-fg:#fff}
+/* touch layout: one swipeable row of bigger buttons */
+body.touch .tools{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;pointer-events:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px;scroll-snap-type:x proximity}
+body.touch .tools::-webkit-scrollbar{display:none}
+body.touch .tools>.tg{flex:none;scroll-snap-align:start}
+body.touch .tbreak{display:none}
+body.touch .tools>.filegrp{margin-left:0}
+body.touch .tb{height:40px;min-width:42px;padding:0 9px;font-size:12px}
+body.touch .tb svg{width:19px;height:19px}
+body.touch .set select,body.touch .set input{height:32px}
+body.touch #snapPop{position:fixed;top:calc(var(--tools-h) + 2*var(--gap));left:var(--gap);right:var(--gap);max-width:none}
+body.touch #snapPop button{height:38px}
+body.touch footer .hint{display:none}
+body.touch .zoom button{width:44px;height:44px}
+body.touch #stage{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body.touch #cmdbar{bottom:calc(var(--gap) + 40px)}
+@media (max-width:640px){body.touch #cmdbar{right:64px}body.touch #touchBar{bottom:calc(var(--gap) + 86px)}}
 @media (prefers-reduced-transparency: reduce){
   .tools>.tg,footer,.cmdline,.zoom button,#meas,#pickBar,#snapPop,aside,#tedit,#cmdHist div{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--panel)}
 }
@@ -354,6 +383,7 @@ aside{border-radius:26px;background:var(--lg-tint-strong)}
     <button class="tb" id="bOrtho" aria-pressed="false" title="Vuông góc ORTHO (F8)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4v16h16"/><path d="M4 14h6v6"/></svg>F8</button>
     <button class="tb osnapAll" aria-pressed="true" title="Bắt điểm OSNAP (F3)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a400" stroke-width="1.8"><rect x="6" y="6" width="12" height="12"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>F3</button>
     <button class="tb" id="bSnapMore" aria-expanded="false" title="Chọn kiểu bắt điểm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></svg>Kiểu</button>
+    <button class="tb" id="bTouch" title="Chuyển chế độ thao tác: Chuột ↔ Cảm ứng"><svg class="ic-mouse" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="3" width="12" height="18" rx="6"/><path d="M12 3v6"/></svg><svg class="ic-touch" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-1.5a1.5 1.5 0 0 1 3 0V11m0-1a1.5 1.5 0 0 1 3 0v4.5A6.5 6.5 0 0 1 11.5 21h-.6a6 6 0 0 1-4.6-2.2L3.6 15.5a1.6 1.6 0 0 1 2.4-2.1L9 16"/></svg><span id="bTouchLbl">Chuột</span></button>
     <button class="tb" id="bPaper" title="Đổi nền bản vẽ đen / trắng"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg><span id="bPaperLbl">Nền trắng</span></button>
   </div>
   <div class="tg set">
@@ -389,6 +419,15 @@ aside{border-radius:26px;background:var(--lg-tint-strong)}
     <canvas id="gl" aria-hidden="true"></canvas>
     <canvas id="tx" aria-hidden="true"></canvas>
     <canvas id="cv" aria-label="Khung bản vẽ"></canvas>
+    <div id="touchBar" role="toolbar" aria-label="Phím thao tác cảm ứng">
+      <button type="button" data-ta="enter" title="Xong (Enter)">✓ Xong</button>
+      <button type="button" data-ta="esc" title="Huỷ (Esc)">✕ Huỷ</button>
+      <button type="button" data-ta="undo" title="Hoàn tác">↶</button>
+      <button type="button" data-ta="redo" title="Làm lại">↷</button>
+      <button type="button" data-ta="all" title="Chọn hết">Chọn hết</button>
+      <button type="button" data-ta="del" title="Xoá phần đang chọn">Xoá</button>
+      <button type="button" data-ta="kbd" title="Mở bàn phím để gõ lệnh / số">⌨</button>
+    </div>
     <div class="zoom">
       <button id="zin" title="Phóng to (+)">+</button>
       <button id="zout" title="Thu nhỏ (−)">−</button>
@@ -10462,6 +10501,9 @@ document.querySelector('label[for="file"]').addEventListener("keydown",e=>{if(e.
   const state = { m: null, view: { cx: 0, cy: 0, s: 1 }, paper: false, fileName: '', busy: false, ents: [], sel: new Map(), dirty: false, lastMove: 0, ortho: false, defH: 2.5, mOv: null, hover: null };
   // Versions for render caches: selVer changes with the selection, geoVer with any geometry edit.
   let selVer = 0, geoVer = 0;
+  // Touch mode: bigger pick / snap / grip radii (a fingertip is ~2× a mouse cursor's precision)
+  let touchOn = false;
+  const tp = (px) => touchOn ? px * 2.2 : px;
   const bumpGeo = () => { geoVer++; };
   // GROUP: item key → group id, group id → Map(key → item)
   const groups = { of: new Map(), members: new Map(), seq: 0 };
@@ -10757,9 +10799,11 @@ document.querySelector('label[for="file"]').addEventListener("keydown",e=>{if(e.
   function freeArea() {
     const tools = document.querySelector('.tools'), foot = document.querySelector('footer'), side = document.querySelector('aside');
     const top = tools ? tools.getBoundingClientRect().bottom - cv.getBoundingClientRect().top : 0;
-    const bot = foot ? cv.getBoundingClientRect().bottom - foot.getBoundingClientRect().top : 0;
+    let bot = foot ? cv.getBoundingClientRect().bottom - foot.getBoundingClientRect().top : 0;
+    const tb = document.getElementById('touchBar');
+    if (tb && getComputedStyle(tb).display !== 'none') bot = Math.max(bot, cv.getBoundingClientRect().bottom - tb.getBoundingClientRect().top);
     const right = side && getComputedStyle(side).display !== 'none' ? cv.getBoundingClientRect().right - side.getBoundingClientRect().left : 0;
-    const t = Math.max(0, Math.min(top, H * 0.5)), b = Math.max(0, Math.min(bot, H * 0.3)), r = Math.max(0, Math.min(right, W * 0.5));
+    const t = Math.max(0, Math.min(top, H * 0.5)), b = Math.max(0, Math.min(bot, H * 0.35)), r = Math.max(0, Math.min(right, W * 0.5));
     return { x0: 0, y0: t, w: Math.max(50, W - r), h: Math.max(50, H - t - b) };
   }
   function fit() {
@@ -11256,7 +11300,7 @@ document.querySelector('label[for="file"]').addEventListener("keydown",e=>{if(e.
   // nearest selectable item at screen point
   function pickAt(sx, sy) {
     const m = state.m; if (!m) return null;
-    const tol = 6 / state.view.s, [x, y] = toWorld(sx, sy);
+    const tol = tp(6) / state.view.s, [x, y] = toWorld(sx, sy);
     let best = null, bd = tol;
     const take = (it, d) => { if (d <= bd) { bd = d; best = it; } };
     for (let i = state.ents.length - 1; i >= 0; i--) {
@@ -11352,7 +11396,7 @@ document.querySelector('label[for="file"]').addEventListener("keydown",e=>{if(e.
   }
 
   /* ---------- grips (điểm nắm) on selected objects, AutoCAD style ---------- */
-  const GRIP_MAX_ITEMS = 100, GRIP_PX = 7;
+  const GRIP_MAX_ITEMS = 100; let GRIP_PX = 7;
   let gripCache = null, hotGrip = null;
   const samePt = (a, b) => Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(a[1] - b[1]) < 1e-9;
   // closed tessellated circle among model primitives → {c, r}
@@ -11418,13 +11462,13 @@ document.querySelector('label[for="file"]').addEventListener("keydown",e=>{if(e.
     return list;
   }
   function gripAt(sx, sy) {
-    let best = null, bd = GRIP_PX;
+    let best = null, bd = tp(GRIP_PX);
     for (const g of selGrips()) { const s = toScreen(g.x, g.y), d = Math.max(Math.abs(s[0] - sx), Math.abs(s[1] - sy)); if (d <= bd) { bd = d; best = g; } }
     return best;
   }
   function drawGrips() {
     const L = selGrips(); if (!L.length) return;
-    const hv = state.hover && !hotGrip ? gripAt(state.hover[0], state.hover[1]) : null, h = 4.5 * dpr;
+    const hv = state.hover && !hotGrip ? gripAt(state.hover[0], state.hover[1]) : null, h = (touchOn ? 7 : 4.5) * dpr;
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.setLineDash([]); ctx.lineWidth = 1 * dpr; ctx.strokeStyle = 'rgba(255,255,255,.85)';
     const path = new Path2D();
     for (const g of L) { if (g === hv || g === hotGrip) continue; const s = toScreen(g.x, g.y), x = s[0] * dpr, y = s[1] * dpr; if (x < -h || y < -h || x > cv.width + h || y > cv.height + h) continue; path.rect(x - h, y - h, 2 * h, 2 * h); }
@@ -11528,7 +11572,7 @@ document.querySelector('label[for="file"]').addEventListener("keydown",e=>{if(e.
 
   function findSnap(sx, sy, from) {
     const m = state.m; if (!m || !snapOn) return null;
-    const ap_ = 12 / state.view.s, [cx, cy] = toWorld(sx, sy), M = snapModes;
+    const ap_ = tp(12) / state.view.s, [cx, cy] = toWorld(sx, sy), M = snapModes;
     const cands = [], segs = [];
     const add = (type, x, y, d) => { if (d === undefined) d = Math.hypot(x - cx, y - cy); if (d <= ap_) cands.push({ type, x, y, d }); };
     let pid = 0, budget = 60000;
@@ -11695,6 +11739,15 @@ document.querySelector('label[for="file"]').addEventListener("keydown",e=>{if(e.
     const cw = curWin();
     if (!cw && hv && !pick && (!R || R.kind === 'sel') && !(ptr && ptr.moved)) { const it = (!R && gripAt(hv[0], hv[1])) ? null : pickAt(hv[0], hv[1]); if (it && !state.sel.has(itemKey(it))) { const key = itemKey(it); if (!hoverG || hoverG.key !== key || hoverG.gv !== geoVer || hoverG.m !== state.m) hoverG = { key, gv: geoVer, m: state.m, g: ghostOf(withGroup([it])) }; drawGeom(ctx, hoverG.g, 'rgba(140,190,255,.9)', { lw: 2.5 }); } }
     if (!R || (CMD.active && CMD.active.key === 'GRIP')) drawGrips();
+    // touch crosshair: dashed tether from the fingertip up to the aim point
+    if (state.aimFinger && hv) {
+      const f = state.aimFinger, x = hv[0] * dpr, y = hv[1] * dpr, r = 16 * dpr;
+      ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineWidth = 1.5 * dpr;
+      ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.setLineDash([3 * dpr, 4 * dpr]); ctx.beginPath(); ctx.moveTo(f[0] * dpr, f[1] * dpr); ctx.lineTo(x, y + r); ctx.stroke();
+      ctx.setLineDash([]); ctx.strokeStyle = state.paper ? '#1f5fbf' : '#7fb2ff';
+      ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.moveTo(x - r * 1.6, y); ctx.lineTo(x - r * 0.4, y); ctx.moveTo(x + r * 0.4, y); ctx.lineTo(x + r * 1.6, y); ctx.moveTo(x, y - r * 1.6); ctx.lineTo(x, y - r * 0.4); ctx.moveTo(x, y + r * 0.4); ctx.lineTo(x, y + r * 1.6); ctx.stroke();
+      ctx.restore();
+    }
     if (cw) {
       const [sx0, sy0, ex0, ey0] = cw, cross = ex0 < sx0, x = Math.min(sx0, ex0) * dpr, y = Math.min(sy0, ey0) * dpr, w = Math.abs(ex0 - sx0) * dpr, h = Math.abs(ey0 - sy0) * dpr;
       ctx.fillStyle = cross ? 'rgba(60,200,120,.12)' : 'rgba(64,140,255,.12)'; ctx.fillRect(x, y, w, h);
@@ -11951,7 +12004,7 @@ document.querySelector('label[for="file"]').addEventListener("keydown",e=>{if(e.
   /* ---------- edit existing text (DDEDIT / TEXTEDIT) ---------- */
   function textAt(sx, sy) {
     const m = state.m; if (!m) return null;
-    const tol = 4 / state.view.s, [x, y] = toWorld(sx, sy);
+    const tol = tp(4) / state.view.s, [x, y] = toWorld(sx, sy);
     for (let i = state.ents.length - 1; i >= 0; i--) {
       const e = state.ents[i]; if (e.type !== 'text' && e.type !== 'dim') continue;
       for (const t of geom(e).texts) if (textHit(entTextLines(t), x, y, tol)) return { kind: e.type === 'dim' ? 'd' : 'u', e, x: t.x, y: t.y, h: t.h };
@@ -12230,7 +12283,7 @@ document.querySelector('label[for="file"]').addEventListener("keydown",e=>{if(e.
   const polyLen = (P, closed) => { let s = 0; for (let i = 0; i + 1 < P.length + (closed ? 1 : 0); i++) { const j = (i + 1) % P.length; s += Math.hypot(P[j][0] - P[i][0], P[j][1] - P[i][1]); } return s; };
   // closed shape under the cursor: {P, area, per, circle?}
   function closedAt(sx, sy) {
-    const m = state.m, tol = 6 / state.view.s, [x, y] = toWorld(sx, sy); let best = null, bd = tol;
+    const m = state.m, tol = tp(6) / state.view.s, [x, y] = toWorld(sx, sy); let best = null, bd = tol;
     for (const e of state.ents) {
       if (e.type === 'circle') { const d = Math.abs(Math.hypot(x - e.c[0], y - e.c[1]) - e.r); if (d <= bd) { bd = d; best = { P: geom(e).polys[0].p, area: Math.PI * e.r * e.r, per: TAU * e.r, r: e.r }; } }
       else if (e.type === 'pline' && e.closed) { const d = polyDist(e.p, true, x, y)[0]; if (d <= bd) { bd = d; best = { P: e.p, area: polyArea(e.p), per: polyLen(e.p, true) }; } }
@@ -12270,7 +12323,7 @@ document.querySelector('label[for="file"]').addEventListener("keydown",e=>{if(e.
     showMeas('Góc', [['Góc', fmtDeg(t)], ['Góc bù', fmtDeg(Math.PI - t)], ['Góc ngoài', fmtDeg(TAU - t)]], { polys: [{ p: [a, v, b] }, { p: arcPts(v[0], v[1], R, s0, s1) }], texts: [] });
   }
   function fitCircleAt(sx, sy) {
-    const m = state.m, tol = 6 / state.view.s, [x, y] = toWorld(sx, sy);
+    const m = state.m, tol = tp(6) / state.view.s, [x, y] = toWorld(sx, sy);
     let best = null, bd = tol;
     for (const e of state.ents) if (e.type === 'circle' || e.type === 'arc') { const d = Math.abs(Math.hypot(x - e.c[0], y - e.c[1]) - e.r); if (d <= bd) { bd = d; best = { c: e.c, r: e.r, exact: true, len: e.type === 'circle' ? TAU * e.r : null }; } }
     if (best) return best;
@@ -12387,15 +12440,26 @@ document.querySelector('label[for="file"]').addEventListener("keydown",e=>{if(e.
       else { pick.b = w; endPick(true); }
       drawOv(); return;
     }
-    cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.offsetX, e.offsetY]); last = [e.offsetX, e.offsetY];
+    try { cv.setPointerCapture(e.pointerId); } catch (_) {} pts.set(e.pointerId, [e.offsetX, e.offsetY]); last = [e.offsetX, e.offsetY];
     if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), s: state.view.s }; ptr = null; return; }
     // press on a grip of the selection: drag-and-release or click-then-click to edit
     if (e.button === 0 && !inputReq && !state.win1 && state.sel.size) {
       const g = gripAt(e.offsetX, e.offsetY);
-      if (g) { ptr = { sx: e.offsetX, sy: e.offsetY, ex: e.offsetX, ey: e.offsetY, moved: false, button: 0, shift: false, mode: 'grip', type: e.pointerType }; runGrip(g); return; }
+      if (g) { ptr = { sx: e.offsetX, sy: e.offsetY, ex: e.offsetX, ey: e.offsetY, moved: false, button: 0, shift: false, mode: 'grip', type: e.pointerType, touch: touchOn }; runGrip(g); return; }
     }
-    ptr = { sx: e.offsetX, sy: e.offsetY, ex: e.offsetX, ey: e.offsetY, moved: false, button: e.button, shift: e.shiftKey, mode: null, type: e.pointerType };
+    ptr = { sx: e.offsetX, sy: e.offsetY, ex: e.offsetX, ey: e.offsetY, moved: false, button: e.button, shift: e.shiftKey, mode: null, type: e.pointerType, touch: touchOn };
+    if (touchOn && e.button === 0) {
+      // touch mode: a point request is answered by tap (at the finger) or drag (crosshair above the finger)
+      if (inputReq && inputReq.kind === 'point') ptr.mode = 'aim';
+      // no command / selecting: hold still ~0.45 s, then drag = window selection (plain drag pans)
+      else if (!inputReq || inputReq.kind === 'sel') ptr.lp = setTimeout(() => {
+        if (ptr && !ptr.moved && pts.size === 1) { ptr.mode = 'win'; ptr.moved = true; ptr.ex = ptr.sx; ptr.ey = ptr.sy; try { navigator.vibrate && navigator.vibrate(15); } catch (_) {} $('#selNote').textContent = 'Kéo để quét chọn · sang phải: trọn trong khung · sang trái: chạm khung'; drawOv(); }
+      }, 450);
+    }
   });
+  // crosshair offset above the fingertip so the finger does not hide the point being placed
+  const AIM_DY = 64;
+  const aimOf = (e) => (e.pointerType === 'mouse') ? [e.offsetX, e.offsetY] : [e.offsetX, Math.max(0, e.offsetY - AIM_DY)];
   cv.addEventListener('pointermove', (e) => {
     if (state.m) { const w = toWorld(e.offsetX, e.offsetY); $('#coord').textContent = fmt(w[0] + state.m.origin[0]) + ' , ' + fmt(w[1] + state.m.origin[1]); }
     state.hover = [e.offsetX, e.offsetY];
@@ -12403,12 +12467,18 @@ document.querySelector('label[for="file"]').addEventListener("keydown",e=>{if(e.
     if ((inputReq && inputReq.kind === 'point') || state.win1 || !inputReq || inputReq.kind === 'sel') drawOv();
     if (!pts.has(e.pointerId)) return;
     pts.set(e.pointerId, [e.offsetX, e.offsetY]);
-    if (pts.size === 2 && pinch) { const [a, b] = [...pts.values()]; zoomAt((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (pinch.s * Math.hypot(a[0] - b[0], a[1] - b[1]) / pinch.d) / state.view.s); return; }
-    if (ptr && !ptr.moved && Math.hypot(e.offsetX - ptr.sx, e.offsetY - ptr.sy) > 5) {
-      ptr.moved = true;
+    if (pts.size === 2 && pinch) { if (ptr && ptr.lp) clearTimeout(ptr.lp); state.aimFinger = null; const [a, b] = [...pts.values()]; zoomAt((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (pinch.s * Math.hypot(a[0] - b[0], a[1] - b[1]) / pinch.d) / state.view.s); return; }
+    // touch mode: placing a point / dragging a grip → move the crosshair above the finger
+    if (ptr && ptr.touch && (ptr.mode === 'aim' || ptr.mode === 'grip')) {
+      if (!ptr.moved && Math.hypot(e.offsetX - ptr.sx, e.offsetY - ptr.sy) > 6) ptr.moved = true;
+      if (ptr.moved) { state.hover = aimOf(e); state.aimFinger = [e.offsetX, e.offsetY]; drawOv(); }
+      return;
+    }
+    if (ptr && !ptr.moved && Math.hypot(e.offsetX - ptr.sx, e.offsetY - ptr.sy) > (ptr.touch ? 8 : 5)) {
+      ptr.moved = true; if (ptr.lp) clearTimeout(ptr.lp);
       if (ptr.mode === 'grip') return;
       const selMode = (inputReq && inputReq.kind === 'sel') || !inputReq;
-      ptr.mode = ptr.button === 0 && selMode && (ptr.type === 'mouse' || ptr.type === 'pen' || ptr.shift || state.win1) ? 'win' : 'pan';
+      ptr.mode = ptr.button === 0 && selMode && (ptr.touch ? state.win1 : (ptr.type === 'mouse' || ptr.type === 'pen' || ptr.shift || state.win1)) ? 'win' : 'pan';
       if (ptr.mode === 'win' && state.win1) { ptr.sx = state.win1[0]; ptr.sy = state.win1[1]; state.win1 = null; }
       if (ptr.mode === 'pan') cv.classList.add('drag');
     }
@@ -12424,7 +12494,13 @@ document.querySelector('label[for="file"]').addEventListener("keydown",e=>{if(e.
     const p = ptr;
     pts.delete(e.pointerId); if (pts.size < 2) pinch = null; last = [...pts.values()][0] || null; if (!pts.size) cv.classList.remove('drag');
     if (!p || pts.size || e.type === 'pointercancel') { if (!pts.size) ptr = null; return; }
-    ptr = null;
+    ptr = null; if (p.lp) clearTimeout(p.lp);
+    if (p.touch && (p.mode === 'aim' || p.mode === 'grip')) {
+      const a = p.moved ? aimOf(e) : [e.offsetX, e.offsetY]; state.aimFinger = null;
+      if (p.mode === 'grip') { if (p.moved && inputReq && CMD.active && CMD.active.key === 'GRIP') click(a[0], a[1], false); drawOv(); return; }
+      if (inputReq && inputReq.kind === 'point') click(a[0], a[1], false);
+      state.hover = a; drawOv(); return;
+    }
     if (p.mode === 'grip') { if (p.moved && inputReq && CMD.active && CMD.active.key === 'GRIP') click(e.offsetX, e.offsetY, false); return; }
     if (!p.moved) { if (p.button === 2) enterAction(); else if (p.button === 0) click(e.offsetX, e.offsetY, e.shiftKey); return; }
     if (p.mode === 'win') finishWin(p.sx, p.sy, p.ex, p.ey, e.shiftKey);
@@ -12449,6 +12525,33 @@ document.querySelector('label[for="file"]').addEventListener("keydown",e=>{if(e.
   $('#bg').addEventListener('click', () => setPaper(!state.paper));
   $('#bPaper').addEventListener('click', () => setPaper(!state.paper));
   try { if (localStorage.getItem('cad-paper') === '1') setPaper(true); } catch (_) {}
+
+  // Input mode: "Chuột" (mouse) or "Cảm ứng" (touch). Touch: bigger targets, crosshair above the finger,
+  // drag pans / hold-then-drag selects, an on-screen Xong/Huỷ/Hoàn tác bar, one-row swipeable toolbar.
+  // First visit picks touch on phones/tablets; afterwards the user's choice is remembered.
+  function setTouch(v, quiet) {
+    touchOn = !!v; document.body.classList.toggle('touch', touchOn);
+    $('#bTouch').setAttribute('aria-pressed', touchOn); $('#bTouchLbl').textContent = touchOn ? 'Cảm ứng' : 'Chuột';
+    try { localStorage.setItem('cad-input', touchOn ? 'touch' : 'mouse'); } catch (_) {}
+    gripCache = null; if (!quiet) toast(touchOn ? 'Chế độ cảm ứng: chạm để đặt điểm, kéo để di chuyển, nhấn giữ rồi kéo để quét chọn, 2 ngón để thu phóng.' : 'Chế độ chuột.');
+    syncToolsH(); setTimeout(syncToolsH, 60); drawOv();
+  }
+  $('#bTouch').addEventListener('click', () => setTouch(!touchOn));
+  {
+    let saved = null; try { saved = localStorage.getItem('cad-input'); } catch (_) {}
+    setTouch(saved ? saved === 'touch' : matchMedia('(hover: none) and (pointer: coarse)').matches, true);
+  }
+  document.querySelectorAll('#touchBar [data-ta]').forEach(b => b.addEventListener('click', () => {
+    switch (b.dataset.ta) {
+      case 'enter': enterAction(); break;
+      case 'esc': escape(); break;
+      case 'undo': undo(); break;
+      case 'redo': redo(); break;
+      case 'all': selectAll(); break;
+      case 'del': if (state.sel.size && !inputReq) eraseNow([...state.sel.values()]); else toast('Chưa chọn đối tượng nào.'); break;
+      case 'kbd': cmdIn.focus(); break;
+    }
+  }));
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && pick) { endPick(false); return; }
     if (e.key === 'Escape' && !$('#pvDlg').hidden) { closePreview(); return; }
